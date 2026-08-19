@@ -7,7 +7,7 @@
 <style>
   :root{
     --bg:#0f172a; --panel:#1e293b; --border:#334155;
-    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#22c55e;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#22c55e; --warn:#f87171;
   }
   *{box-sizing:border-box;}
   body{
@@ -19,31 +19,31 @@
   p.sub{color:var(--muted); font-size:13px; margin:0 0 16px;}
   .formula{
     display:inline-block; background:var(--panel); border:1px solid var(--border);
-    padding:6px 12px; border-radius:8px; font-size:13px; margin-bottom:14px; color:var(--accent);
+    padding:6px 12px; border-radius:8px; font-size:12px; margin-bottom:6px; color:var(--accent);
   }
+  .formula2{ display:block; margin-top:6px; }
   .table-wrap{
-    overflow-x:auto; border:1px solid var(--border); border-radius:10px;
+    overflow-x:auto; border:1px solid var(--border); border-radius:10px; margin-top:14px;
   }
-  table{border-collapse:collapse; width:100%; min-width:560px;}
+  table{border-collapse:collapse; width:100%; min-width:680px;}
   thead th{
     position:sticky; top:0; background:#111827; color:var(--text);
-    font-size:12px; text-transform:uppercase; letter-spacing:.03em;
-    padding:10px 8px; border-bottom:1px solid var(--border); text-align:center;
+    font-size:11px; text-transform:uppercase; letter-spacing:.03em;
+    padding:10px 6px; border-bottom:1px solid var(--border); text-align:center;
   }
   tbody td{
     border-bottom:1px solid var(--border); padding:6px; text-align:center;
   }
   tbody tr:nth-child(even){background:rgba(255,255,255,0.02);}
   input[type=number]{
-    width:90px; background:var(--bg); color:var(--text);
+    width:85px; background:var(--bg); color:var(--text);
     border:1px solid var(--border); border-radius:6px;
     padding:8px 6px; font-size:14px; text-align:center;
   }
   input[type=number]:focus{outline:none; border-color:var(--accent);}
   .rownum{color:var(--muted); font-size:12px;}
-  .result{
-    font-weight:600; color:var(--accent2); font-size:14px;
-  }
+  .result{font-weight:600; font-size:14px; color:var(--accent2);}
+  .offset-neg{color:var(--warn);}
   .toolbar{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
   button{
     background:var(--panel); color:var(--text); border:1px solid var(--border);
@@ -55,18 +55,20 @@
 <body>
 
 <h1>Offset Calculator</h1>
-<p class="sub">Enter H, D, A for each row — Offset (O) calculates automatically.</p>
-<div class="formula">O = (D ÷ 2) + A − H</div>
+<p class="sub">Enter Spec, Value from Hole Edge, and Actual Dia for each row.</p>
+<div class="formula">Actual Y/Z = (Actual Dia ÷ 2) + Value from Hole Edge</div>
+<div class="formula formula2">Offset = Actual Y/Z − Spec (Y or Z axis)</div>
 
 <div class="table-wrap">
 <table>
   <thead>
     <tr>
       <th>#</th>
-      <th>Holes from Edge (H)</th>
-      <th>Dia (D)</th>
-      <th>Actual Dia (A)</th>
-      <th>Offset (O)</th>
+      <th>Spec (Y/Z Axis)</th>
+      <th>Value from Hole Edge</th>
+      <th>Actual Dia</th>
+      <th>Actual Y/Z</th>
+      <th>Offset</th>
     </tr>
   </thead>
   <tbody id="rows"></tbody>
@@ -85,25 +87,41 @@
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="rownum">${i}</td>
-      <td><input type="number" step="any" class="h" inputmode="decimal"></td>
-      <td><input type="number" step="any" class="d" inputmode="decimal"></td>
-      <td><input type="number" step="any" class="a" inputmode="decimal"></td>
-      <td class="result o">—</td>
+      <td><input type="number" step="any" class="spec" inputmode="decimal"></td>
+      <td><input type="number" step="any" class="edge" inputmode="decimal"></td>
+      <td><input type="number" step="any" class="adia" inputmode="decimal"></td>
+      <td class="result yz">—</td>
+      <td class="result offset">—</td>
     `;
     rowsEl.appendChild(tr);
   }
 
   function calcRow(tr) {
-    const h = parseFloat(tr.querySelector('.h').value);
-    const d = parseFloat(tr.querySelector('.d').value);
-    const a = parseFloat(tr.querySelector('.a').value);
-    const oCell = tr.querySelector('.o');
-    if (isNaN(h) || isNaN(d) || isNaN(a)) {
-      oCell.textContent = '—';
+    const spec = parseFloat(tr.querySelector('.spec').value);
+    const edge = parseFloat(tr.querySelector('.edge').value);
+    const adia = parseFloat(tr.querySelector('.adia').value);
+    const yzCell = tr.querySelector('.yz');
+    const offCell = tr.querySelector('.offset');
+
+    if (isNaN(edge) || isNaN(adia)) {
+      yzCell.textContent = '—';
+      offCell.textContent = '—';
+      offCell.classList.remove('offset-neg');
       return;
     }
-    const o = (d / 2) + a - h;
-    oCell.textContent = o.toFixed(3);
+
+    const actualYZ = (adia / 2) + edge;
+    yzCell.textContent = actualYZ.toFixed(3);
+
+    if (isNaN(spec)) {
+      offCell.textContent = '—';
+      offCell.classList.remove('offset-neg');
+      return;
+    }
+
+    const offset = actualYZ - spec;
+    offCell.textContent = offset.toFixed(3);
+    offCell.classList.toggle('offset-neg', offset < 0);
   }
 
   rowsEl.addEventListener('input', (e) => {
@@ -113,7 +131,7 @@
 
   document.getElementById('clearBtn').addEventListener('click', () => {
     document.querySelectorAll('input').forEach(i => i.value = '');
-    document.querySelectorAll('.o').forEach(o => o.textContent = '—');
+    document.querySelectorAll('.result').forEach(o => { o.textContent = '—'; o.classList.remove('offset-neg'); });
   });
 </script>
 
