@@ -43,7 +43,7 @@
   input[type=number]:focus{outline:none; border-color:var(--accent);}
   .rownum{color:var(--muted); font-size:12px;}
   .result{font-weight:600; font-size:14px; color:var(--accent2);}
-  .offset-neg{color:var(--warn);}
+  .offset-bad{color:var(--warn);}
   .toolbar{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
   button{
     background:var(--panel); color:var(--text); border:1px solid var(--border);
@@ -55,7 +55,7 @@
 <body>
 
 <h1>Offset Calculator</h1>
-<p class="sub">Enter Spec, Value from Hole Edge, and Actual Dia for each row.</p>
+<p class="sub">Enter Spec, Value from Hole Edge, and Actual Dia for each row. Offset beyond ±1.1 shows in red.</p>
 <div class="formula">Actual Y/Z = (Actual Dia ÷ 2) + Value from Hole Edge</div>
 <div class="formula formula2">Offset = Actual Y/Z − Spec (Y or Z axis)</div>
 
@@ -81,7 +81,8 @@
 
 <script>
   const rowsEl = document.getElementById('rows');
-  const ROWS = 20;
+  const ROWS = 40;
+  const OFFSET_LIMIT = 1.1;
 
   for (let i = 1; i <= ROWS; i++) {
     const tr = document.createElement('tr');
@@ -106,7 +107,7 @@
     if (isNaN(edge) || isNaN(adia)) {
       yzCell.textContent = '—';
       offCell.textContent = '—';
-      offCell.classList.remove('offset-neg');
+      offCell.classList.remove('offset-bad');
       return;
     }
 
@@ -115,13 +116,13 @@
 
     if (isNaN(spec)) {
       offCell.textContent = '—';
-      offCell.classList.remove('offset-neg');
+      offCell.classList.remove('offset-bad');
       return;
     }
 
     const offset = actualYZ - spec;
     offCell.textContent = offset.toFixed(3);
-    offCell.classList.toggle('offset-neg', offset < 0);
+    offCell.classList.toggle('offset-bad', Math.abs(offset) > OFFSET_LIMIT);
   }
 
   rowsEl.addEventListener('input', (e) => {
@@ -131,7 +132,7 @@
 
   document.getElementById('clearBtn').addEventListener('click', () => {
     document.querySelectorAll('input').forEach(i => i.value = '');
-    document.querySelectorAll('.result').forEach(o => { o.textContent = '—'; o.classList.remove('offset-neg'); });
+    document.querySelectorAll('.result').forEach(o => { o.textContent = '—'; o.classList.remove('offset-bad'); });
   });
 </script>
 
