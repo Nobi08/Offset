@@ -233,6 +233,12 @@
       return;
     }
     const slug = slugify(raw);
+    // Clear previously loaded template before loading a new part number
+    rowsEl.querySelectorAll('input').forEach(i => i.value = '');
+    rowsEl.querySelectorAll('.result').forEach(o => {
+      o.textContent = '—';
+      o.classList.remove('offset-bad');
+    });
     loadBtn.disabled = true;
     loadStatus.textContent = 'Loading…';
 
