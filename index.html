@@ -4,11 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Offset Calculator</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 <style>
   :root{
     --bg:#0f172a; --panel:#1e293b; --border:#334155;
-    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#22c55e; --warn:#f87171; --guess:#fbbf24;
+    --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --accent2:#22c55e; --warn:#f87171;
   }
   *{box-sizing:border-box;}
   body{
@@ -26,73 +25,45 @@
 
   .header-card{
     background:var(--panel); border:1px solid var(--border); border-radius:10px;
-    padding:14px; margin-top:16px; display:grid; grid-template-columns:1fr 1fr; gap:10px;
+    padding:14px; margin-top:16px;
   }
   .header-card label{ font-size:11px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:4px; }
+  .header-row{ display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+  .header-row > div{ flex:1; min-width:140px; }
   .header-card input[type=text]{
     width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border);
     border-radius:6px; padding:8px; font-size:14px;
   }
-
-  .upload-card{
-    background:var(--panel); border:1px dashed var(--border);
-    border-radius:10px; padding:14px; margin-top:16px;
-    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  #loadBtn{
+    background:var(--accent); color:#0f172a; font-weight:600; border:none;
+    padding:9px 14px; border-radius:8px; font-size:13px; white-space:nowrap;
   }
-  .upload-card label{
-    background:var(--accent); color:#0f172a; font-weight:600;
-    padding:9px 14px; border-radius:8px; font-size:13px; cursor:pointer;
-  }
-  .upload-card input[type=file]{ display:none; }
-  .upload-status{ font-size:12px; color:var(--muted); }
-  #previewWrap{ margin-top:12px; display:none; }
-  #previewWrap img{
-    max-width:100%; max-height:260px; border-radius:8px; border:1px solid var(--border);
-    display:block; margin-bottom:10px;
-  }
-  #extractBtn{
-    background:var(--accent2); color:#0f172a; font-weight:600; border:none;
-    padding:10px 16px; border-radius:8px; font-size:13px;
-  }
-  #extractBtn:disabled{ opacity:0.6; }
-  #extractStatus{ font-size:12px; color:var(--muted); margin-top:8px; display:block; }
-  .warn-banner{
-    background:rgba(251,191,36,0.12); border:1px solid var(--guess); color:var(--guess);
-    font-size:12px; padding:8px 10px; border-radius:8px; margin-top:10px; display:none;
-  }
-  #progressBar{
-    height:6px; background:var(--border); border-radius:4px; margin-top:8px; overflow:hidden; display:none;
-  }
-  #progressFill{ height:100%; width:0%; background:var(--accent); transition:width 0.2s; }
-  #rawTextWrap{ margin-top:10px; display:none; }
-  #rawTextWrap summary{ font-size:12px; color:var(--muted); cursor:pointer; }
-  #rawText{
-    width:100%; height:140px; margin-top:6px; background:var(--bg); color:var(--text);
-    border:1px solid var(--border); border-radius:6px; padding:8px; font-size:12px; font-family:monospace;
-  }
+  #loadBtn:disabled{ opacity:0.6; }
+  #loadStatus{ font-size:12px; color:var(--muted); margin-top:8px; display:block; }
+  .field-inspector{ margin-top:10px; }
 
   .table-wrap{
     overflow-x:auto; border:1px solid var(--border); border-radius:10px; margin-top:14px;
   }
-  table{border-collapse:collapse; width:100%; min-width:680px;}
+  table{border-collapse:collapse; width:100%; min-width:1100px;}
   thead th{
     position:sticky; top:0; background:#111827; color:var(--text);
-    font-size:11px; text-transform:uppercase; letter-spacing:.03em;
-    padding:10px 6px; border-bottom:1px solid var(--border); text-align:center;
+    font-size:10px; text-transform:uppercase; letter-spacing:.02em;
+    padding:8px 5px; border-bottom:1px solid var(--border); text-align:center;
   }
   tbody td{
-    border-bottom:1px solid var(--border); padding:6px; text-align:center;
+    border-bottom:1px solid var(--border); padding:5px; text-align:center;
   }
   tbody tr:nth-child(even){background:rgba(255,255,255,0.02);}
-  input[type=number]{
-    width:85px; background:var(--bg); color:var(--text);
+  input[type=number], input.cell-text{
+    width:70px; background:var(--bg); color:var(--text);
     border:1px solid var(--border); border-radius:6px;
-    padding:8px 6px; font-size:14px; text-align:center;
+    padding:7px 4px; font-size:13px; text-align:center;
   }
-  input[type=number]:focus{outline:none; border-color:var(--accent);}
-  input.ocr-guess{ border:1px dashed var(--guess); background:rgba(251,191,36,0.08); }
+  input.cell-text.wide{ width:60px; }
+  input:focus{outline:none; border-color:var(--accent);}
   .rownum{color:var(--muted); font-size:12px;}
-  .result{font-weight:600; font-size:14px; color:var(--accent2);}
+  .result{font-weight:600; font-size:13px; color:var(--accent2);}
   .offset-bad{color:var(--warn);}
   .toolbar{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
   button{
@@ -105,55 +76,37 @@
 <body>
 
 <h1>Offset Calculator</h1>
-<p class="sub">Enter Spec, Value from Hole Edge, and Actual Dia for each row. Offset beyond ±1.1 shows in red.</p>
+<p class="sub">Enter a Part Number and load its template, or fill rows manually. Offset beyond ±1.1 shows in red.</p>
 <div class="formula">Actual Y/Z = (Actual Dia ÷ 2) + Value from Hole Edge</div>
 <div class="formula formula2">Offset = Actual Y/Z − Spec (Y or Z axis)</div>
 
 <div class="header-card">
-  <div>
-    <label>Part Number</label>
-    <input type="text" id="partNo">
+  <div class="header-row">
+    <div>
+      <label>Part Number</label>
+      <input type="text" id="partNo" placeholder="e.g. XJS01313-B-LH">
+    </div>
+    <button id="loadBtn">Load Data</button>
   </div>
-  <div>
-    <label>FSM Serial</label>
-    <input type="text" id="fsmSerial">
-  </div>
-  <div>
-    <label>Date</label>
-    <input type="text" id="dateField">
-  </div>
-  <div>
+  <span id="loadStatus"></span>
+  <div class="field-inspector">
     <label>Inspector</label>
     <input type="text" id="inspector">
   </div>
-</div>
-
-<div class="upload-card">
-  <label for="photoInput">📷 Upload Inspection Sheet Photo</label>
-  <input type="file" id="photoInput" accept="image/*">
-  <span class="upload-status" id="uploadStatus">No photo selected</span>
-</div>
-<div id="previewWrap">
-  <img id="previewImg" alt="Uploaded sheet preview">
-  <button id="extractBtn">🔍 Run Free OCR (Beta)</button>
-  <div id="progressBar"><div id="progressFill"></div></div>
-  <span id="extractStatus"></span>
-  <div class="warn-banner" id="warnBanner">
-    ⚠️ Free OCR struggles with handwriting. Amber-outlined cells are unverified guesses — check every one against the photo before trusting it.
-  </div>
-  <details id="rawTextWrap">
-    <summary>View raw OCR text (for manual cross-checking)</summary>
-    <textarea id="rawText" readonly></textarea>
-  </details>
 </div>
 
 <div class="table-wrap">
 <table>
   <thead>
     <tr>
-      <th>#</th>
-      <th>Spec (Y/Z Axis)</th>
-      <th>Value from Hole Edge</th>
+      <th>Sl No</th>
+      <th>Press</th>
+      <th>Sel ID</th>
+      <th>Ref</th>
+      <th>X-axis</th>
+      <th>Spec (Y/Z)</th>
+      <th>Spec Dia</th>
+      <th>Value from Edge</th>
       <th>Actual Dia</th>
       <th>Actual Y/Z</th>
       <th>Offset</th>
@@ -177,9 +130,14 @@
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="rownum">${i}</td>
-      <td><input type="number" step="any" class="spec" inputmode="decimal"></td>
-      <td><input type="number" step="any" class="edge" inputmode="decimal"></td>
-      <td><input type="number" step="any" class="adia" inputmode="decimal"></td>
+      <td><input type="text" class="cell-text wide press"></td>
+      <td><input type="text" class="cell-text wide selid"></td>
+      <td><input type="text" class="cell-text wide ref"></td>
+      <td><input type="number" step="any" class="cell-text xaxis"></td>
+      <td><input type="number" step="any" class="spec"></td>
+      <td><input type="text" class="cell-text wide specdia"></td>
+      <td><input type="number" step="any" class="edge"></td>
+      <td><input type="number" step="any" class="adia"></td>
       <td class="result yz">—</td>
       <td class="result offset">—</td>
     `;
@@ -216,37 +174,38 @@
 
   rowsEl.addEventListener('input', (e) => {
     const tr = e.target.closest('tr');
-    if (tr) {
-      e.target.classList.remove('ocr-guess'); // once user edits, it's no longer an unverified guess
-      calcRow(tr);
-    }
+    if (tr) calcRow(tr);
   });
 
   document.getElementById('clearBtn').addEventListener('click', () => {
-    document.querySelectorAll('input[type=number]').forEach(i => { i.value = ''; i.classList.remove('ocr-guess'); });
+    document.querySelectorAll('#rows input').forEach(i => i.value = '');
     document.querySelectorAll('.result').forEach(o => { o.textContent = '—'; o.classList.remove('offset-bad'); });
-    document.getElementById('warnBanner').style.display = 'none';
-    document.getElementById('rawTextWrap').style.display = 'none';
   });
 
   // CSV export
   document.getElementById('exportBtn').addEventListener('click', () => {
     const partNo = document.getElementById('partNo').value;
-    const fsmSerial = document.getElementById('fsmSerial').value;
-    const dateField = document.getElementById('dateField').value;
     const inspector = document.getElementById('inspector').value;
 
-    let csv = 'Part Number,FSM Serial,Date,Inspector\n';
-    csv += [partNo, fsmSerial, dateField, inspector].map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',') + '\n\n';
-    csv += '#,Spec (Y/Z Axis),Value from Hole Edge,Actual Dia,Actual Y/Z,Offset\n';
+    let csv = 'Part Number,Inspector\n';
+    csv += [partNo, inspector].map(v => `"${(v||'').replace(/"/g,'""')}"`).join(',') + '\n\n';
+    csv += 'Sl No,Press,Sel ID,Ref,X-axis,Spec (Y/Z),Spec Dia,Value from Edge,Actual Dia,Actual Y/Z,Offset\n';
 
     rowsEl.querySelectorAll('tr').forEach((tr, i) => {
-      const spec = tr.querySelector('.spec').value;
-      const edge = tr.querySelector('.edge').value;
-      const adia = tr.querySelector('.adia').value;
-      const yz = tr.querySelector('.yz').textContent;
-      const off = tr.querySelector('.offset').textContent;
-      csv += [i+1, spec, edge, adia, yz, off].join(',') + '\n';
+      const vals = [
+        i+1,
+        tr.querySelector('.press').value,
+        tr.querySelector('.selid').value,
+        tr.querySelector('.ref').value,
+        tr.querySelector('.xaxis').value,
+        tr.querySelector('.spec').value,
+        tr.querySelector('.specdia').value,
+        tr.querySelector('.edge').value,
+        tr.querySelector('.adia').value,
+        tr.querySelector('.yz').textContent,
+        tr.querySelector('.offset').textContent
+      ];
+      csv += vals.join(',') + '\n';
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -258,103 +217,63 @@
     URL.revokeObjectURL(url);
   });
 
-  // Photo upload + preview
-  const photoInput = document.getElementById('photoInput');
-  const uploadStatus = document.getElementById('uploadStatus');
-  const previewWrap = document.getElementById('previewWrap');
-  const previewImg = document.getElementById('previewImg');
-  const extractBtn = document.getElementById('extractBtn');
-  const extractStatus = document.getElementById('extractStatus');
-  const warnBanner = document.getElementById('warnBanner');
-  const progressBar = document.getElementById('progressBar');
-  const progressFill = document.getElementById('progressFill');
-  const rawTextWrap = document.getElementById('rawTextWrap');
-  const rawText = document.getElementById('rawText');
+  // Part Number -> XML template loader
+  const partNoInput = document.getElementById('partNo');
+  const loadBtn = document.getElementById('loadBtn');
+  const loadStatus = document.getElementById('loadStatus');
 
-  photoInput.addEventListener('change', () => {
-    const file = photoInput.files[0];
-    if (!file) {
-      uploadStatus.textContent = 'No photo selected';
-      previewWrap.style.display = 'none';
-      return;
-    }
-    uploadStatus.textContent = file.name;
-    extractStatus.textContent = '';
-    warnBanner.style.display = 'none';
-    rawTextWrap.style.display = 'none';
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      previewImg.src = e.target.result;
-      previewWrap.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // Heuristic: on this sheet, column order per row is roughly
-  // ... Spec, Spec Dia, Value-from-edge, Actual Dia, Actual Y/Z, Offset (last 6 numbers)
-  function guessRowValues(line) {
-    const tokens = (line.match(/-?\d+\.?\d*/g) || []).map(Number).filter(n => !isNaN(n));
-    if (tokens.length < 6) return null;
-    const n = tokens.length;
-    return {
-      spec: tokens[n - 6],
-      edge: tokens[n - 4],
-      adia: tokens[n - 3]
-    };
+  function slugify(v) {
+    return v.trim().replace(/[\/\\\s]+/g, '-');
   }
 
-  extractBtn.addEventListener('click', async () => {
-    const file = photoInput.files[0];
-    if (!file) return;
-
-    extractBtn.disabled = true;
-    extractBtn.textContent = 'Reading photo…';
-    extractStatus.textContent = '';
-    progressBar.style.display = 'block';
-    progressFill.style.width = '0%';
+  loadBtn.addEventListener('click', async () => {
+    const raw = partNoInput.value.trim();
+    if (!raw) {
+      loadStatus.textContent = 'Enter a part number first.';
+      return;
+    }
+    const slug = slugify(raw);
+    loadBtn.disabled = true;
+    loadStatus.textContent = 'Loading…';
 
     try {
-      const result = await Tesseract.recognize(file, 'eng', {
-        logger: (m) => {
-          if (m.status === 'recognizing text') {
-            progressFill.style.width = Math.round(m.progress * 100) + '%';
-          }
-        }
-      });
+      const res = await fetch(`/data/${slug}.xml`);
+      if (!res.ok) {
+        loadStatus.textContent = `No template found for "${raw}" (looked for data/${slug}.xml).`;
+        return;
+      }
+      const text = await res.text();
+      const xml = new DOMParser().parseFromString(text, 'application/xml');
+      if (xml.querySelector('parsererror')) {
+        loadStatus.textContent = 'That XML file could not be parsed.';
+        return;
+      }
 
-      const text = result.data.text || '';
-      rawText.value = text;
-      rawTextWrap.style.display = 'block';
-
-      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      const rowNodes = xml.querySelectorAll('row');
       const trs = rowsEl.querySelectorAll('tr');
       let filled = 0;
 
-      lines.forEach((line, idx) => {
-        if (idx >= trs.length) return;
-        const guess = guessRowValues(line);
-        if (!guess) return;
-        const tr = trs[idx];
-        const specI = tr.querySelector('.spec');
-        const edgeI = tr.querySelector('.edge');
-        const adiaI = tr.querySelector('.adia');
-        specI.value = guess.spec; specI.classList.add('ocr-guess');
-        edgeI.value = guess.edge; edgeI.classList.add('ocr-guess');
-        adiaI.value = guess.adia; adiaI.classList.add('ocr-guess');
+      rowNodes.forEach((node, i) => {
+        if (i >= trs.length) return;
+        const tr = trs[i];
+        const get = (tag) => node.querySelector(tag)?.textContent?.trim() ?? '';
+
+        tr.querySelector('.press').value = get('press');
+        tr.querySelector('.selid').value = get('selId');
+        tr.querySelector('.ref').value = get('ref');
+        tr.querySelector('.xaxis').value = get('xAxis');
+        tr.querySelector('.spec').value = get('spec');
+        tr.querySelector('.specdia').value = get('specDia');
+        // edge / adia left for the operator to measure and enter fresh
         calcRow(tr);
         filled++;
       });
 
-      warnBanner.style.display = 'block';
-      extractStatus.textContent = filled > 0
-        ? `Guessed values for ${filled} row(s) — all marked amber need verification.`
-        : 'Could not confidently guess any rows. Check the raw text below and enter values manually.';
+      loadStatus.textContent = `Loaded template: ${filled} row(s) from data/${slug}.xml.`;
     } catch (err) {
-      extractStatus.textContent = 'OCR error: ' + err.message;
+      loadStatus.textContent = 'Error loading template: ' + err.message;
     } finally {
-      extractBtn.disabled = false;
-      extractBtn.textContent = '🔍 Run Free OCR (Beta)';
-      progressBar.style.display = 'none';
+      loadBtn.disabled = false;
     }
   });
 </script>

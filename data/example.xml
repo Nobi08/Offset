@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inspection>
+  <partNumber>XJS01313-B-LH</partNumber>
+  <rows>
+    <row>
+      <slNo>1</slNo>
+      <press>PW</press>
+      <selId>1</selId>
+      <ref>B</ref>
+      <xAxis>25</xAxis>
+      <spec>168.5</spec>
+      <specDia>13</specDia>
+    </row>
+    <row>
+      <slNo>2</slNo>
+      <press>PWX</press>
+      <selId>2</selId>
+      <ref>B</ref>
+      <xAxis>665</xAxis>
+      <spec>110.18</spec>
+      <specDia>9*12</specDia>
+    </row>
+  </rows>
+</inspection>
